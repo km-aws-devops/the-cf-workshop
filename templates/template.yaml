@@ -1,0 +1,70 @@
+Resources:
+  jobFlowInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: myDemoEMRInstanceProfile
+      Path: "/"
+      Roles:
+        -
+          !Ref jobFlowRole
+
+  jobFlowRole:
+    Type: AWS::IAM::Role
+    Properties:
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEC2ReadOnlyAccess
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+
+  rolePolicies:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: root
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: Allow
+            Action: "*"
+            Resource: "*"
+      Roles:
+        -
+          !Ref jobFlowRole
+
+  serviceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: "/"
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service:
+                - elasticmapreduce.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonElasticMapReduceRole
+
+  cluster:
+    Type: AWS::EMR::Cluster
+    Properties:
+      Name: zs-demo
+      ServiceRole: !Ref serviceRole
+      JobFlowRole: myDemoEMRInstanceProfile
+      ReleaseLabel: emr-5.11.1
+      Instances:
+        MasterInstanceGroup:
+          InstanceType: m4.large
+          InstanceCount: 2
+
